@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuclear Reactor Control System</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            font-family: 'Rajdhani', sans-serif;
+            min-height: 100vh;
+            padding: 10px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0, 255, 255, 0.03) 2px,
+                    rgba(0, 255, 255, 0.03) 4px
+                );
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 2;
+        }
+
+        h1 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2.5em;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #00ffff, #0080ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+        }
+
+        #soundNotification {
+            display: inline-block;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            padding: 10px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            box-shadow: 0 4px 20px rgba(30, 60, 114, 0.4);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #soundNotification:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(30, 60, 114, 0.6);
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto auto;
+            gap: 15px;
+            max-width: 1800px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        .reactor-section {
+            grid-column: 1;
+            grid-row: 1;
+            display: flex;
+            gap: 15px;
+        }
+
+        .control-section {
+            grid-column: 2;
+            grid-row: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .bottom-section {
+            grid-column: 1 / -1;
+            grid-row: 2;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        .panel {
+            background: linear-gradient(135deg, rgba(42, 42, 42, 0.9) 0%, rgba(28, 28, 28, 0.9) 100%);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 15px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .reactor-view {
+            flex: 1;
+        }
+
+        .turbine-view {
+            width: 180px;
+        }
+
+        canvas {
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            height: auto;
+        }
+
+        .panel-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.2em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 10px;
+            color: #00ffff;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+
+        .financial-info {
+            background: linear-gradient(135deg, #1a472a 0%, #0f2818 100%);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.95em;
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            height: 100%;
+        }
+
+        .financial-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
+
+        .financial-row:last-child {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(0, 255, 0, 0.3);
+        }
+
+        .gauge {
+            margin: 8px 0;
+            padding: 8px;
+            background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .gauge-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .gauge-label span:last-child {
+            font-family: 'Orbitron', monospace;
+            color: #00ffff;
+            text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+        }
+
+        .gauge-bar {
+            height: 6px;
+            background: linear-gradient(90deg, #1a1a1a 0%, #2a2a2a 100%);
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .gauge-fill {
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .gauge-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(255, 255, 255, 0.3) 50%, 
+                transparent 100%);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .control-slider {
+            margin: 10px 0;
+            padding: 10px;
+            background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .control-slider label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #00ffff;
+        }
+
+        .control-slider input[type="range"] {
+            width: 100%;
+            height: 8px;
+            -webkit-appearance: none;
+            background: linear-gradient(90deg, #1a1a1a 0%, #2a2a2a 100%);
+            border-radius: 4px;
+            outline: none;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+        }
+
+        .control-slider input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #00ffff 0%, #0080ff 100%);
+            cursor: pointer;
+            box-shadow: 
+                0 0 15px rgba(0, 255, 255, 0.8),
+                0 2px 5px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .control-slider input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 
+                0 0 20px rgba(0, 255, 255, 1),
+                0 2px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        .control-slider input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #00ffff 0%, #0080ff 100%);
+            cursor: pointer;
+            box-shadow: 
+                0 0 15px rgba(0, 255, 255, 0.8),
+                0 2px 5px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .maintenance-button {
+            background: linear-gradient(135deg, #2a6ba1 0%, #1e4d7a 100%);
+            color: white;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            padding: 10px 15px;
+            margin: 5px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 0.9em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: all 0.3s ease;
+            box-shadow: 
+                0 4px 15px rgba(42, 107, 161, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .maintenance-button:hover:not(:disabled) {
+            background: linear-gradient(135deg, #3580bf 0%, #2a6ba1 100%);
+            transform: translateY(-2px);
+            box-shadow: 
+                0 6px 20px rgba(42, 107, 161, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+
+        .maintenance-button:disabled {
+            background: linear-gradient(135deg, #333 0%, #222 100%);
+            cursor: not-allowed;
+            opacity: 0.5;
+            box-shadow: none;
+        }
+
+        button#scram {
+            background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+            color: white;
+            border: 2px solid #ff6666;
+            padding: 15px 25px;
+            margin: 10px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 900;
+            font-family: 'Orbitron', monospace;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            width: 100%;
+            transition: all 0.3s ease;
+            box-shadow: 
+                0 6px 25px rgba(255, 68, 68, 0.4),
+                inset 0 -3px 0 rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        button#scram::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(255, 255, 255, 0.3) 50%, 
+                transparent 100%);
+            transition: left 0.5s ease;
+        }
+
+        button#scram:hover:not(:disabled) {
+            background: linear-gradient(135deg, #ff6666 0%, #ff4444 100%);
+            transform: translateY(-2px);
+            box-shadow: 
+                0 8px 30px rgba(255, 68, 68, 0.6),
+                inset 0 -3px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        button#scram:hover:not(:disabled)::before {
+            left: 100%;
+        }
+
+        button#scram:disabled {
+            background: linear-gradient(135deg, #333 0%, #222 100%);
+            cursor: not-allowed;
+            opacity: 0.5;
+            box-shadow: none;
+            border-color: #444;
+        }
+
+        .alarm {
+            display: none;
+            background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+            color: white;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-weight: 700;
+            text-align: center;
+            letter-spacing: 0.1em;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0.5; }
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            width: 100%;
+            font-size: 0.9em;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            user-select: none;
+        }
+
+        .status h3 {
+            margin-bottom: 6px;
+            font-weight: 700;
+            color: #00ffff;
+            text-shadow: 0 0 8px rgba(0, 255, 255, 0.7);
+        }
+
+        .status.safe {
+            background: linear-gradient(135deg, #1a472a 0%, #0f2818 100%);
+            border: 1px solid #00ff00;
+            color: #aaffaa;
+            text-shadow: 0 0 5px #00ff00;
+        }
+
+        .status.warning {
+            background: linear-gradient(135deg, #5c4a1d 0%, #3a2e0f 100%);
+            border: 1px solid #ffaa00;
+            color: #ffcc66;
+            text-shadow: 0 0 5px #ffaa00;
+        }
+
+        .status.danger {
+            background: linear-gradient(135deg, #5c1e1e 0%, #3a0f0f 100%);
+            border: 1px solid #ff4444;
+            color: #ff8888;
+            text-shadow: 0 0 5px #ff4444;
+        }
+
+        .event-notification {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            background: rgba(255, 170, 0, 0.95);
+            color: #1a1a1a;
+            padding: 15px 20px;
+            border-radius: 12px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            box-shadow: 0 0 20px rgba(255, 170, 0, 0.8);
+            display: none;
+            animation: slideDown 0.5s ease-out;
+            user-select: none;
+            z-index: 10;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-120%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .steam {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: rise 2.5s ease-out infinite;
+            filter: blur(1.5px);
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+        }
+
+        @keyframes rise {
+            0% { transform: translateY(0) scale(1); opacity: 0.7; }
+            100% { transform: translateY(-120px) scale(2); opacity: 0; }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .overdrive-panel {
+            background: linear-gradient(135deg, #333 0%, #222 100%);
+            padding: 15px;
+            border-radius: 12px;
+            margin: 0;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 68, 0, 0.3);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .overdrive-button {
+            background: linear-gradient(135deg, #ff4400 0%, #cc3300 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            margin: 0 0 10px 0;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            transition: background-color 0.3s ease;
+            box-shadow: 0 0 15px rgba(255, 68, 0, 0.7);
+        }
+
+        .overdrive-button:hover:not(:disabled) {
+            background: linear-gradient(135deg, #ff6600 0%, #ff4400 100%);
+            box-shadow: 0 0 25px rgba(255, 102, 0, 0.9);
+        }
+
+        .overdrive-button:disabled {
+            background: linear-gradient(135deg, #333 0%, #222 100%);
+            cursor: not-allowed;
+            opacity: 0.5;
+            box-shadow: none;
+        }
+
+        .overdrive-status {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            color: #ffbb88;
+        }
+
+        .overdrive-status span {
+            padding: 6px 10px;
+            border-radius: 6px;
+            background: rgba(255, 68, 0, 0.15);
+            box-shadow: 0 0 10px rgba(255, 68, 0, 0.3);
+        }
+
+        .section-header {
+            font-size: 1.1em;
+            font-weight: 700;
+            margin: 15px 0 10px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid #0080ff;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #00ffff;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.6);
+        }
+
+        .grid-zones, .component-status, .chemistry-status {
+            background: linear-gradient(135deg, #222 0%, #111 100%);
+            padding: 10px 15px;
+            border-radius: 12px;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(0, 255, 255, 0.15);
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .zone, .component, .chemistry-param {
+            margin: 10px 0;
+        }
+
+        .zone-header {
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: #00ffff;
+            text-shadow: 0 0 8px rgba(0, 255, 255, 0.7);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .zone-info {
+            display: flex;
+            justify-content: space-between;
+            margin: 3px 0;
+            font-size: 0.9em;
+            color: #a0f0ff;
+            letter-spacing: 0.02em;
+        }
+
+        .component span, .chemistry-param span {
+            display: inline-block;
+            font-weight: 600;
+            color: #a0f0ff;
+        }
+
+        .component-status .component, .chemistry-status .chemistry-param {
+            border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+            padding-bottom: 6px;
+        }
+
+        .component-status .component:last-child, .chemistry-status .chemistry-param:last-child {
+            border-bottom: none;
+        }
+
+        .component-status .gauge-bar, .chemistry-status .gauge-bar {
+            margin-top: 4px;
+            height: 6px;
+            border-radius: 3px;
+        }
+
+        /* Scrollbar styling for overflow areas */
+        .grid-zones::-webkit-scrollbar, .component-status::-webkit-scrollbar, .chemistry-status::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .grid-zones::-webkit-scrollbar-track, .component-status::-webkit-scrollbar-track, .chemistry-status::-webkit-scrollbar-track {
+            background: #111;
+            border-radius: 10px;
+        }
+
+        .grid-zones::-webkit-scrollbar-thumb, .component-status::-webkit-scrollbar-thumb, .chemistry-status::-webkit-scrollbar-thumb {
+            background: #00ffff;
+            border-radius: 10px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1400px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto auto;
+            }
+            .reactor-section, .control-section, .bottom-section {
+                grid-column: 1;
+                grid-row: auto;
+                display: block;
+            }
+            .control-section {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            .bottom-section {
+                grid-template-columns: 1fr 1fr;
+            }
+            .turbine-view {
+                width: 100%;
+                margin-top: 15px;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .bottom-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Nuclear Reactor Simulator</h1>
+        <h1>hire me on discord @eqxr</h1>
+        <div id="soundNotification" title="Click to enable sound">
+            Click anywhere to enable sound
+        </div>
+    </div>
+    <div class="main-container">
+        <section class="reactor-section">
+            <div class="panel reactor-view">
+                <canvas id="reactorCanvas" width="600" height="400"></canvas>
+                <div id="eventNotification" class="event-notification"></div>
+            </div>
+            <div class="panel turbine-view">
+                <canvas id="turbineCanvas" width="200" height="400"></canvas>
+            </div>
+        </section>
+        <section class="control-section">
+            <div class="panel financial-info">
+                <div class="panel-title">Financial Info</div>
+                <div class="financial-row">
+                    <span>Revenue:</span>
+                    <span id="revenueValue">$0/hr</span>
+                </div>
+                <div class="financial-row">
+                    <span>Operating Costs:</span>
+                    <span id="costsValue">$0/hr</span>
+                </div>
+                <div class="financial-row">
+                    <span>Profit:</span>
+                    <span id="profitValue">$0/hr</span>
+                </div>
+                <div class="financial-row" style="margin-top: 10px; border-top: 1px solid rgba(0, 255, 0, 0.3); padding-top: 10px;">
+                    <span>Total Balance:</span>
+                    <span id="totalBalanceValue">$0</span>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-title">Reactor Overdrive</div>
+                <div class="overdrive-panel">
+                    <button id="activateOverdrive" class="overdrive-button">Activate Overdrive ($30,000)</button>
+                    <div id="overdriveStatus" class="overdrive-status">
+                        <span>Overdrive: <span id="overdriveState">Inactive</span></span>
+                        <span>Cooldown: <span id="overdriveCooldown">Ready</span></span>
+                        <span>Max Temp: <span id="currentMaxTemp">1000</span>°C</span>
+                    </div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-title">Controls</div>
+                <div class="control-slider">
+                    <label for="controlRodSlider">Control Rod Position</label>
+                    <input type="range" id="controlRodSlider" min="0" max="100" value="100" step="1">
+                </div>
+                <div class="control-slider">
+                    <label for="coolantSlider">Coolant Flow</label>
+                    <input type="range" id="coolantSlider" min="0" max="100" value="100" step="1">
+                </div>
+                <div class="control-slider">
+                    <label for="volumeSlider">Master Volume</label>
+                    <input type="range" id="volumeSlider" min="0" max="100" value="50" step="1">
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-title">Core & Output</div>
+                <div class="gauge">
+                    <div class="gauge-label">
+                        <span>Core Temperature</span>
+                        <span id="tempValue">0°C</span>
+                    </div>
+                    <div class="gauge-bar">
+                        <div id="tempGauge" class="gauge-fill" style="background-color: #00ff00;"></div>
+                    </div>
+                </div>
+                <div class="gauge">
+                    <div class="gauge-label">
+                        <span>Power Output</span>
+                        <span id="powerValue">0 MW</span>
+                    </div>
+                    <div class="gauge-bar">
+                        <div id="powerGauge" class="gauge-fill" style="background-color: #00aaff;"></div>
+                    </div>
+                </div>
+                <div class="gauge">
+                    <div class="gauge-label">
+                        <span>Turbine Output</span>
+                        <span id="turbineValue">0 MW</span>
+                    </div>
+                    <div class="gauge-bar">
+                        <div id="turbineGauge" class="gauge-fill" style="background-color: #aa00ff;"></div>
+                    </div>
+                </div>
+                <div class="gauge">
+                    <div class="gauge-label">
+                        <span>Average Fuel Rod Health</span>
+                        <span id="fuelHealthValue">100%</span>
+                    </div>
+                    <div class="gauge-bar">
+                        <div id="fuelHealthGauge" class="gauge-fill" style="background-color: #ffaa00;"></div>
+                    </div>
+                </div>
+                <div class="gauge">
+                    <div class="gauge-label">
+                        <span>Coolant Quality</span>
+                        <span id="coolantQualityValue">100%</span>
+                    </div>
+                    <div class="gauge-bar">
+                        <div id="coolantQualityGauge" class="gauge-fill" style="background-color: #00aaff;"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="bottom-section">
+            <div class="panel grid-zones">
+                <div class="panel-title">Grid Zones</div>
+                <div class="zone">
+                    <div class="zone-header">Industrial Zone</div>
+                    <div class="zone-info">
+                        <span>Demand:</span>
+                        <span id="industrialDemand">80%</span>
+                    </div>
+                    <div class="zone-info">
+                        <span>Price Multiplier:</span>
+                        <span id="industrialPrice">1.2x</span>
+                    </div>
+                    <div class="gauge-bar">
+                        <div id="industrialStability" class="gauge-fill" style="background-color: #ffaa00;"></div>
+                    </div>
+                </div>
+                <div class="zone">
+                    <div class="zone-header">Residential Zone</div>
+                    <div class="zone-info">
+                        <span>Demand:</span>
+                        <span id="residentialDemand">50%</span>
+                    </div>
+                    <div class="zone-info">
+                        <span>Price Multiplier:</span>
+                        <span id="residentialPrice">1.0x</span>
+                    </div>
+                    <div class="gauge-bar">
+                        <div id="residentialStability" class="gauge-fill" style="background-color: #ffaa00;"></div>
+                    </div>
+                </div>
+                <div class="zone">
+                    <div class="zone-header">Commercial Zone</div>
+                    <div class="zone-info">
+                        <span>Demand:</span>
+                        <span id="commercialDemand">60%</span>
+                    </div>
+                    <div class="zone-info">
+                        <span>Price Multiplier:</span>
+                        <span id="commercialPrice">1.1x</span>
+                    </div>
+                    <div class="gauge-bar">
+                        <div id="commercialStability" class="gauge-fill" style="background-color: #ffaa00;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel component-status">
+                <div class="panel-title">Component Status</div>
+                <div class="component">
+                    <span>Turbine Bearing:</span>
+                    <span id="turbineBearingHealth">100%</span>
+                    <div class="gauge-bar">
+                        <div id="turbineBearingGauge" class="gauge-fill" style="background-color: #00ff00;"></div>
+                    </div>
+                </div>
+                <div class="component">
+                    <span>Pump Seals:</span>
+                    <span id="pumpSealsHealth">100%</span>
+                    <div class="gauge-bar">
+                        <div id="pumpSealsGauge" class="gauge-fill" style="background-color: #00ff00;"></div>
+                    </div>
+                </div>
+                <div class="component">
+                    <span>Valve Integrity:</span>
+                    <span id="valveIntegrityHealth">100%</span>
+                    <div class="gauge-bar">
+                        <div id="valveIntegrityGauge" class="gauge-fill" style="background-color: #00ff00;"></div>
+                    </div>
+                </div>
+                <div class="component">
+                    <span>Sensor Accuracy:</span>
+                    <span id="sensorAccuracyHealth">100%</span>
+                    <div class="gauge-bar">
+                        <div id="sensorAccuracyGauge" class="gauge-fill" style="background-color: #00ff00;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel chemistry-status">
+                <div class="panel-title">Coolant Chemistry</div>
+                <div class="chemistry-param">
+                    <span>pH Level:</span>
+                    <span id="pHValue">7.0</span>
+                    <div class="gauge-bar">
+                        <div id="pHGauge" class="gauge-fill" style="background-color: #00ff00;"></div>
+                    </div>
+                </div>
+                <div class="chemistry-param">
+                    <span>Conductivity:</span>
+                    <span id="conductivityValue">100 µS/cm</span>
+                    <div class="gauge-bar">
+                        <div id="conductivityGauge" class="gauge-fill" style="background-color: #00ff00;"></div>
+                    </div>
+                </div>
+                <div class="chemistry-param">
+                    <span>Dissolved O₂:</span>
+                    <span id="oxygenValue">5 ppb</span>
+                    <div class="gauge-bar">
+                        <div id="oxygenGauge" class="gauge-fill" style="background-color: #00ff00;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-title">Maintenance</div>
+                <button class="maintenance-button" id="replaceFuel">Replace Fuel Rods ($1,000,000)</button>
+                <button class="maintenance-button" id="replaceCoolant">Replace Coolant ($100,000)</button>
+                <button class="maintenance-button" id="maintainTurbine">Maintain Turbine ($250,000)</button>
+                <button id="scram">EMERGENCY SCRAM</button>
+                <div id="alarm" class="alarm">⚠️ REACTOR ALARM ⚠️</div>
+                <div id="status" class="status safe">
+                    <h3>Status: Normal Operation</h3>
+                    <p id="statusMessage">All systems functioning normally.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+    <script src="audioManager.js"></script>
+    <script src="reactor.js"></script>
+</body>
+</html>
